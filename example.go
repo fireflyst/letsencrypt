@@ -17,7 +17,7 @@ func main() {
 	}
 
 	// dns changes
-	domains := []string{"nvtia.com","www.nvtia.com"}
+	domains := []string{"example.com","www.example.com"}
 	err = c.Create(ctx,  "test.key", "test.crt", ":dns", domains...)
 	if err != nil {
 		fmt.Println(2, err)
