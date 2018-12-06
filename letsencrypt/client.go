@@ -17,7 +17,7 @@ type Client struct {
 
 // New creates a new ACME client. If the key does not exist, a new one is
 // generated and registered.
-func New(ctx context.Context, key string) (*Client, error) {
+func New(ctx context.Context, key, email string) (*Client, error) {
 	client := &acme.Client{}
 	k, err := loadKey(key)
 	if err != nil {
