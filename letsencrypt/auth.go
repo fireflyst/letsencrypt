@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
-	"net/http"
-	"strconv"
-
 	"golang.org/x/crypto/acme"
+	"io"
+	"net/http"
+	"os"
+	"time"
 )
 
 var ErrNoChallenges = errors.New("no suitable challenge found")
@@ -44,32 +44,56 @@ func DnsChallenge(auth *acme.Authorization) (*acme.Challenge, error) {
 
 // Http-01 PerHttpChallenge creates a temporary server that ACME can access to verify
 // ownership of a domain name.
-func (c *Client) PerHttpChallenge(ctx context.Context, chal *acme.Challenge) error {
+func (c *Client) PerHttpChallenge(ctx context.Context, chal *acme.Challenge, domain, path string) error {
 	c.log.Debugf("attempting HTTP challenge on :http")
+	url := c.client.HTTP01ChallengePath(chal.Token)
 	response, err := c.client.HTTP01ChallengeResponse(chal.Token)
 	if err != nil {
 		return err
 	}
-	var (
-		b   = []byte(response)
-		mux = http.NewServeMux()
-	)
-	mux.HandleFunc(
-		c.client.HTTP01ChallengePath(chal.Token),
-		func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Length", strconv.Itoa(len(b)))
-			w.WriteHeader(http.StatusOK)
-			w.Write(b)
-		},
-	)
-	l, err := net.Listen("tcp", ":http")
+	file, err := os.Create(path + "/" + chal.Token)
 	if err != nil {
 		return err
 	}
-	defer l.Close()
-	go func() {
-		http.Serve(l, mux)
-	}()
+	_, err = file.WriteString(response)
+	file.Close()
+	if err != nil {
+		return err
+	}
+	fmt.Print("http://", domain + url, " ", "value: " + response , "\n")
+	var resp = &http.Response{StatusCode:600}
+	var value string
+
+	for response != value {
+		for resp.StatusCode != 200{
+			resp, err = http.Get("http://" +  domain + url)
+			if resp.StatusCode != 200 {
+				time.Sleep(time.Second *10 )
+			}
+		}
+		defer resp.Body.Close()
+		if err != nil {
+			return err
+		}
+		if value != "" {
+			time.Sleep(time.Second *10 )
+		}
+		buf := make([]byte, 1*128)
+		for {
+			n, err := resp.Body.Read(buf)
+			if n == 0 {
+				if err != io.EOF {
+					return err
+				}
+				break
+			}
+			value += string(buf[:n])
+		}
+		if err != nil {
+			return err
+		}
+		break
+	}
 	_, err = c.client.Accept(ctx, chal)
 	if err != nil {
 		return err
@@ -83,29 +107,27 @@ func (c *Client) PerHttpChallenge(ctx context.Context, chal *acme.Challenge) err
 func (c *Client) PerDnsChallenge(ctx context.Context, chal *acme.Challenge, domain string) error {
 	c.log.Debugf("attempting DNS challenge on %s", domain)
 	tok, err := c.client.DNS01ChallengeRecord(chal.Token)
+	fmt.Printf("Please add DNS TXT parsing:  _acme-challenge.%s ", domain)
+	fmt.Println(tok)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Please add DNS TXT parsing:  _acme-challenge.%s ", domain)
-	fmt.Println(tok)
-	var start string
-	fmt.Println("是否解析好了(y/n):")
-	fmt.Scan(&start)
-	if start == "y" {
-		_, err = c.client.Accept(ctx, chal)
-		if err != nil {
-			return err
-		}
-		_, err = c.client.WaitAuthorization(ctx, chal.URI)
-		return err
-	} else {
-		return errors.New("Input error")
+	var res string
+	for res != tok {
+		time.Sleep(time.Second*10)
+		res = TxtChange(domain)
 	}
+	_, err = c.client.Accept(ctx, chal)
+	if err != nil {
+		return err
+	}
+	_, err = c.client.WaitAuthorization(ctx, chal.URI)
+	return err
 }
 
 // authorize attempts to authorize the provided domain name in preparation for
 // obtaining a TLS certificate.
-func (c *Client) authorize(ctx context.Context, domain string, chtype string) error {
+func (c *Client) authorize(ctx context.Context, domain, chtype, path string) error {
 	c.log.Debugf("authorizing %s", domain)
 	auth, err := c.client.Authorize(ctx, domain)
 	if err != nil {
@@ -119,7 +141,7 @@ func (c *Client) authorize(ctx context.Context, domain string, chtype string) er
 		if err != nil {
 			return err
 		}
-		return c.PerHttpChallenge(ctx, chal)
+		return c.PerHttpChallenge(ctx, chal, domain, path)
 	} else if chtype == ":dns" {
 		chal, err := DnsChallenge(auth)
 		if err != nil {

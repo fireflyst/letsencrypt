@@ -33,12 +33,12 @@ func createCSR(k *rsa.PrivateKey, domains ...string) ([]byte, error) {
 }
 
 // createCert obtains a certificate for the provided CSR.
-func (c *Client) createCert(ctx context.Context, csr []byte, cert string) error {
+func (c *Client) createCert(ctx context.Context, csr []byte, cert, domain string ) error {
 	ders, _, err := c.client.CreateCert(ctx, csr, 90*24*time.Hour, true)
 	if err != nil {
 		return err
 	}
-	w, err := os.Create(cert)
+	w, err := os.Create(domain + "/" + cert)
 	if err != nil {
 		return err
 	}

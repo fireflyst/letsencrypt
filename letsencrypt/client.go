@@ -1,6 +1,5 @@
 package letsencrypt
 
-
 import (
 	"context"
 	"os"
@@ -17,16 +16,17 @@ type Client struct {
 
 // New creates a new ACME client. If the key does not exist, a new one is
 // generated and registered.
-func New(ctx context.Context, key, email string) (*Client, error) {
+func New(ctx context.Context, key, email, path string) (*Client, error) {
 	client := &acme.Client{}
-	k, err := loadKey(key)
+	k, err := loadKey(path, key)
 	if err != nil {
 		if os.IsNotExist(err) {
-			k, err = generateKey(key)
+			k, err = generateKey(path, key)
 			if err != nil {
 				return nil, err
 			}
 			client.Key = k
+
 			if email == "" {
 				if _, err := client.Register(ctx, nil, acme.AcceptTOS); err != nil {
 					return nil, err
@@ -39,6 +39,7 @@ func New(ctx context.Context, key, email string) (*Client, error) {
 					return nil, err
 				}
 			}
+
 		} else {
 			return nil, err
 		}
@@ -53,13 +54,17 @@ func New(ctx context.Context, key, email string) (*Client, error) {
 
 // Create attempts to create a TLS certificate and private key for the
 // specified domain names. The provided address is used for challenges.
-func (c *Client) Create(ctx context.Context, key, cert, chtype string,domains ...string) error {
+func (c *Client) Create(ctx context.Context, key, cert, chtype, path string,domains ...string) error {
+	out := make(chan error)
 	for _, d := range domains {
-		if err := c.authorize(ctx, d, chtype); err != nil {
+		go func(d string)(err error) {
+			err = c.authorize(ctx, d, chtype, path)
+			out <- err
 			return err
-		}
+		}(d)
 	}
-	k, err := generateKey(key)
+	<-out
+	k, err := generateKey(path, key)
 	if err != nil {
 		return err
 	}
@@ -67,5 +72,5 @@ func (c *Client) Create(ctx context.Context, key, cert, chtype string,domains ..
 	if err != nil {
 		return err
 	}
-	return c.createCert(ctx, b, cert)
+	return c.createCert(ctx, b, cert, path)
 }
