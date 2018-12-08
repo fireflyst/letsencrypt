@@ -9,7 +9,7 @@ import (
 
 func main() {
 	domains := []string{"example.com", "www.example.com"}
-	dir := "aaa"
+	dir := "test"
 	name := dir
 
 	ctx := context.Background()
