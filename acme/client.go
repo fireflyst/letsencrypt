@@ -16,12 +16,12 @@ type Client struct {
 
 // New creates a new ACME client. If the key does not exist, a new one is
 // generated and registered.
-func New(ctx context.Context, key, email, path string) (*Client, error) {
+func New(ctx context.Context, dir, accountkey, email string) (*Client, error) {
 	client := &acme.Client{}
-	k, err := loadKey(path, key)
+	k, err := loadKey(dir, accountkey + ".key")
 	if err != nil {
 		if os.IsNotExist(err) {
-			k, err = generateKey(path, key)
+			k, err = generateKey(dir, accountkey + ".key")
 			if err != nil {
 				return nil, err
 			}
@@ -54,17 +54,17 @@ func New(ctx context.Context, key, email, path string) (*Client, error) {
 
 // Create attempts to create a TLS certificate and private key for the
 // specified domain names. The provided address is used for challenges.
-func (c *Client) Create(ctx context.Context, key, cert, chtype, path string,domains ...string) error {
+func (c *Client) Create(ctx context.Context, dir, name, chtype string, domains ...string) error {
 	out := make(chan error)
 	for _, d := range domains {
 		go func(d string)(err error) {
-			err = c.authorize(ctx, d, chtype, path)
+			err = c.authorize(ctx, d, chtype, dir)
 			out <- err
 			return err
 		}(d)
 	}
 	<-out
-	k, err := generateKey(path, key)
+	k, err := generateKey(dir, name + ".key")
 	if err != nil {
 		return err
 	}
@@ -72,5 +72,5 @@ func (c *Client) Create(ctx context.Context, key, cert, chtype, path string,doma
 	if err != nil {
 		return err
 	}
-	return c.createCert(ctx, b, cert, path)
+	return c.createCert(ctx, b, name, dir)
 }

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"os"
 	"time"
+	"path"
 )
 
 const certType = "CERTIFICATE"
@@ -33,12 +34,12 @@ func createCSR(k *rsa.PrivateKey, domains ...string) ([]byte, error) {
 }
 
 // createCert obtains a certificate for the provided CSR.
-func (c *Client) createCert(ctx context.Context, csr []byte, cert, domain string ) error {
+func (c *Client) createCert(ctx context.Context, csr []byte, name, dir string ) error {
 	ders, _, err := c.client.CreateCert(ctx, csr, 90*24*time.Hour, true)
 	if err != nil {
 		return err
 	}
-	w, err := os.Create(domain + "/" + cert)
+	w, err := os.Create(path.Join(dir, name + ".crt") )
 	if err != nil {
 		return err
 	}

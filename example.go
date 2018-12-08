@@ -3,37 +3,30 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/ovmvo/letsencrypt/acme"
 )
 
 func main() {
 	domains := []string{"example.com", "www.example.com"}
-	path := domains[0]
-	ctx := context.Background()
-	_, err := os.Stat(path)
-	if err != nil {
-		err = os.Mkdir(path, 644)
-		if err != nil {
-			fmt.Println(0, err)
-		}
-	}
+	dir := "aaa"
+	name := dir
 
-	c, err := acme.New(ctx, path+"_ca.key", "test@aaa.com", path)
+	ctx := context.Background()
+	c, err := acme.New(ctx, dir,"account", "test@example.com", )
 	if err != nil {
-		fmt.Println(1, err)
+		fmt.Println(err)
 	}
 
 	//dns changes
-	//err = c.Create(ctx,  domain + ".key", domain + ".crt", ":dns", domain, domains...)
-	//if err != nil {
-	//	fmt.Println(2, err)
-	//}
+	err = c.Create(ctx, dir, name, "dns", domains...)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	////http changes
-	err = c.Create(ctx, path+".key", path+".crt", ":http", path, domains...)
-	if err != nil {
-		fmt.Println(2, err)
-	}
+	//err = c.Create(ctx, dir, name, "http", domains...)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
 }

@@ -136,13 +136,13 @@ func (c *Client) authorize(ctx context.Context, domain, chtype, path string) err
 	if auth.Status == acme.StatusValid {
 		return nil
 	}
-	if chtype == ":http"{
+	if chtype == "http"{
 		chal, err := HttpChallenge(auth)
 		if err != nil {
 			return err
 		}
 		return c.PerHttpChallenge(ctx, chal, domain, path)
-	} else if chtype == ":dns" {
+	} else if chtype == "dns" {
 		chal, err := DnsChallenge(auth)
 		if err != nil {
 			return err
