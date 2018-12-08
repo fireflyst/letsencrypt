@@ -107,8 +107,7 @@ func (c *Client) PerHttpChallenge(ctx context.Context, chal *acme.Challenge, dom
 func (c *Client) PerDnsChallenge(ctx context.Context, chal *acme.Challenge, domain string) error {
 	c.log.Debugf("attempting DNS challenge on %s", domain)
 	tok, err := c.client.DNS01ChallengeRecord(chal.Token)
-	fmt.Printf("Please add DNS TXT parsing:  _acme-challenge.%s ", domain)
-	fmt.Println(tok)
+	fmt.Printf("Please add DNS TXT parsing:  _acme-challenge.%s ----> %s\n", domain,tok )
 	if err != nil {
 		return err
 	}
