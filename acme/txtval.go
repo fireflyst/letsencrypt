@@ -1,4 +1,4 @@
-package letsencrypt
+package acme
 
 import (
 	"encoding/json"
@@ -7,9 +7,9 @@ import (
 )
 
 type Mone struct {
-	Code int `json:"code"`
+	Code  int   `json:"code"`
 	Error error `json:"error"`
-	Data Mtwo `json:"data"`
+	Data  Mtwo  `json:"data"`
 }
 
 type Mtwo struct {
@@ -24,19 +24,19 @@ type Mthree struct {
 
 type Mfour struct {
 	Timeconsume string `json:"time_consume"`
-	Records []E `json:"records"`
-	Error string `json:"error"`
+	Records     []E    `json:"records"`
+	Error       string `json:"error"`
 }
 
 type E struct {
-	Ttl int `json:"ttl"`
+	Ttl   int    `json:"ttl"`
 	Value string `json:"value"`
 }
 
-func TxtChange(domain string)(res string){
+func TxtChange(domain string) (res string) {
 	url := "https://myssl.com/api/v1/tools/dns_query?qtype=16&host=" + "_acme-challenge." + domain + "&qmode=-1"
-	resp , err := http.Get(url)
-	if err != nil{
+	resp, err := http.Get(url)
+	if err != nil {
 		return res
 	}
 	defer resp.Body.Close()
@@ -53,9 +53,9 @@ func TxtChange(domain string)(res string){
 		jsonstr += string(buf[:n])
 	}
 
-	var  contrast Mone
+	var contrast Mone
 	err = json.Unmarshal([]byte(jsonstr), &contrast)
-	if err != nil{
+	if err != nil {
 		return res
 	}
 	res = contrast.Data.Us[0].Answer.Records[0].Value

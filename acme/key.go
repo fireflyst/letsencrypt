@@ -1,4 +1,4 @@
-package letsencrypt
+package acme
 
 import (
 	"crypto/rand"
@@ -15,7 +15,7 @@ const keyType = "RSA PRIVATE KEY"
 var ErrInvalidKey = errors.New("invalid key")
 
 // loadKey attempts to load a private key from the specified file.
-func loadKey(path,filename string) (*rsa.PrivateKey, error) {
+func loadKey(path, filename string) (*rsa.PrivateKey, error) {
 	b, err := ioutil.ReadFile(path + "/" + filename)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func loadKey(path,filename string) (*rsa.PrivateKey, error) {
 
 // generateKey creates a new 2048-bit RSA key and writes it to the specified
 // file.
-func generateKey(path,filename string) (*rsa.PrivateKey, error) {
+func generateKey(path, filename string) (*rsa.PrivateKey, error) {
 	k, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func generateKey(path,filename string) (*rsa.PrivateKey, error) {
 		Type:  keyType,
 		Bytes: x509.MarshalPKCS1PrivateKey(k),
 	})
-	if err := ioutil.WriteFile(path + "/" + filename, b, 0600); err != nil {
+	if err := ioutil.WriteFile(path+"/"+filename, b, 0600); err != nil {
 		return nil, err
 	}
 	return k, nil
