@@ -25,7 +25,7 @@ git clone https://github.com/nathan-osman/go-simpleacme 代码 修复了http证�
       fmt.Println(1, err)
     }
 
-// http change
+    // http change
     err = c.Create(ctx,  "test.key", "test.crt", ":http", path, domains...)
     if err != nil {
       fmt.Println(2, err)
@@ -33,8 +33,23 @@ git clone https://github.com/nathan-osman/go-simpleacme 代码 修复了http证�
     
 ### http认证方式
 
-// dns change
-  err = c.Create(ctx,  "test.key", "test.crt", ":dns", domain, domains...)
+    domains := []string{"example.com", "www.example.com"}
+    path := domains[0]
+    ctx := context.Background()
+    _, err := os.Stat(path)
+    if err != nil {
+      err = os.Mkdir(path, 644)
+      if err != nil {
+        fmt.Println(0, err)
+      }
+    }
+
+    c, err := acme.New(ctx, "account.key", "test@aaa.com", path)
+    if err != nil {
+      fmt.Println(1, err)
+    }
+    // dns change
+    err = c.Create(ctx,  "test.key", "test.crt", ":dns", domain, domains...)
     if err != nil {
       fmt.Println(2, err)
     }
