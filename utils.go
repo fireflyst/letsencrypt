@@ -1,23 +1,21 @@
-package acme
+package main
 
 import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
-	"path"
-	"os"
-
 	"errors"
+	"io/ioutil"
+	"os"
+	"path"
 )
 
 const keyType = "RSA PRIVATE KEY"
-
 var ErrInvalidKey = errors.New("invalid key")
 
-// loadKey attempts to load a private key from the specified file.
-func loadKey(dir,filename string) (*rsa.PrivateKey, error) {
+
+func LoadKey(dir,filename string) (*rsa.PrivateKey, error) {
 	b, err := ioutil.ReadFile(path.Join(dir, filename))
 	if err != nil {
 		return nil, err
@@ -30,8 +28,8 @@ func loadKey(dir,filename string) (*rsa.PrivateKey, error) {
 }
 
 // generateKey creates a new 2048-bit RSA key and writes it to the specified
-// file.
-func generateKey(dir,filename string) (*rsa.PrivateKey, error) {
+
+func GenerateKey(dir,filename string) (*rsa.PrivateKey, error) {
 	if _, err := os.Stat(dir); err != nil {
 		err = os.Mkdir(dir,644)
 		if err != nil {
@@ -51,3 +49,5 @@ func generateKey(dir,filename string) (*rsa.PrivateKey, error) {
 	}
 	return k, nil
 }
+
+
